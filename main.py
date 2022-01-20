@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from MY_MODELS import Datacon1model
@@ -294,7 +295,7 @@ class Datacon1classifier(nn.Module):
             if self.num4epoch >= self.MaxEpoch:
                 break
 
-
+os.environ["CUDA_VISIBLE_DEVICES"]= "0"
 
 
 if __name__ == '__main__':
@@ -312,7 +313,7 @@ if __name__ == '__main__':
     iter_to_accumul = 10
     MaxStep = 20
     MaxStepVal = 10000
-    bSizeTrn = 24
+    bSizeTrn = 8
     save_range= 10
     modelLoadNum = 260
     CROP = False
@@ -344,30 +345,30 @@ if __name__ == '__main__':
                                           data_folder_dir_test= data_folder_dir_test,
                                           bSizeVal=10,lr=3e-4,eps=1e-9)
 
-    MODEL_START.TestStep()
+    #MODEL_START.TestStep()
 
-    # for i in range(10000):
-    #     MODEL_START.START_TRN_VAL()
-    #
-    #     if i%save_range ==0:
-    #         if i > 15000:
-    #             break
-    #
-    #         try:
-    #             torch.save(MODEL_START, modelPlotSaveDir + str(i) + '.pth')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             time.sleep(5)
-    #         except:
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             time.sleep(5)
+    for i in range(10000):
+        MODEL_START.START_TRN_VAL()
+
+        if i%save_range ==0:
+            if i > 15000:
+                break
+
+            try:
+                torch.save(MODEL_START, modelPlotSaveDir + str(i) + '.pth')
+                print('saving model complete')
+                print('saving model complete')
+                print('saving model complete')
+                print('saving model complete')
+                print('saving model complete')
+                time.sleep(5)
+            except:
+                print('saving model failed')
+                print('saving model failed')
+                print('saving model failed')
+                print('saving model failed')
+                print('saving model failed')
+                time.sleep(5)
 
 
 

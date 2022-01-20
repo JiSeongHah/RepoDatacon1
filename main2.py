@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from MY_MODELS import Datacon1model
@@ -10,12 +11,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import csv
-import os
+from sklearn.metrics import f1_score
 
 
 class Datacon1classifier(nn.Module):
     def __init__(self,modelKind,backboneOutFeature, LinNum,
                  totalCropNum,data_folder_dir_trn,
+                 CROP,size4res,
                  data_folder_dir_val,MaxEpoch,data_folder_dir_test,
                  modelPlotSaveDir,iter_to_accumul,MaxStep,MaxStepVal,
                  bSizeTrn= 32,bSizeVal=10,lr=3e-4,eps=1e-9):
@@ -36,6 +38,9 @@ class Datacon1classifier(nn.Module):
         self.iter_to_accumul = iter_to_accumul
         self.MaxStep = MaxStep
         self.MaxStepVal = MaxStepVal
+
+        self.CROP =CROP
+        self.size4res = size4res
 
 
         self.lr = lr
@@ -78,13 +83,13 @@ class Datacon1classifier(nn.Module):
                               eps=self.eps  # 0으로 나누는 것을 방지하기 위한 epsilon 값
                               )
 
-        MyTrnDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_trn,TRAIN=True)
+        MyTrnDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_trn,TRAIN=True,CROP=self.CROP,size4res=size4res)
         self.trainDataloader = DataLoader(MyTrnDataset,batch_size=self.bSizeTrn,shuffle=True)
 
-        MyValDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_val, TRAIN=True)
+        MyValDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_val, TRAIN=True,CROP=self.CROP,size4res=size4res)
         self.valDataloader = DataLoader(MyValDataset, batch_size=self.bSizeVal, shuffle=False)
 
-        MyTestDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_test,TRAIN=False)
+        MyTestDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_test,TRAIN=False,CROP=self.CROP,size4res=size4res)
         self.testLen = len(MyTestDataset)
         self.TestDataloader = DataLoader(MyTestDataset,batch_size=1,shuffle=False)
 
@@ -98,15 +103,17 @@ class Datacon1classifier(nn.Module):
 
         return out
 
+    def f1ScoreFunc(self,real, pred):
+        score = f1_score(real, pred, average='macro')
+        return score
+
     def calLoss(self,logit,label):
 
         loss = CrossEntropyLoss()
 
         pred = torch.argmax(logit,dim=1)
 
-
-        acc = torch.mean((pred == label).float())
-
+        acc = self.f1ScoreFunc(label,pred)
 
         return loss(logit,label) , acc
 
@@ -288,27 +295,29 @@ class Datacon1classifier(nn.Module):
             if self.num4epoch >= self.MaxEpoch:
                 break
 
-
 os.environ["CUDA_VISIBLE_DEVICES"]= "1"
+
 
 if __name__ == '__main__':
 
-    modelKind = 'resnet152'
-    #baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
-    baseDir = '/home/a286/hjs_dir1/Dacon1/'
-    backboneOutFeature = 512
-    LinNum = 128
+    modelKind = 'resnet101'
+    baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
+    #baseDir = '/home/a286/hjs_dir1/Dacon1/'
+    backboneOutFeature = 512*4
+    LinNum = 256
     totalCropNum = 25
     data_folder_dir_trn = baseDir + 'data/train/'
     data_folder_dir_val  = baseDir + 'data/val/'
     data_folder_dir_test = baseDir + 'data/test/'
     MaxEpoch= 10
-    iter_to_accumul = 4
+    iter_to_accumul = 10
     MaxStep = 20
     MaxStepVal = 10000
-    bSizeTrn = 24
+    bSizeTrn = 8
     save_range= 10
-    modelLoadNum = 280
+    modelLoadNum = 260
+    CROP = False
+    size4res = [512,512]
 
     savingDir = mk_name(model=modelKind,BckOutFt=backboneOutFeature,cNum=LinNum,bS=bSizeTrn)
     modelPlotSaveDir = baseDir +savingDir + '/'
@@ -331,6 +340,8 @@ if __name__ == '__main__':
                                           MaxStep=MaxStep,
                                           MaxStepVal=MaxStepVal,
                                           bSizeTrn= bSizeTrn,
+                                          CROP= CROP,
+                                          size4res= size4res,
                                           data_folder_dir_test= data_folder_dir_test,
                                           bSizeVal=10,lr=3e-4,eps=1e-9)
 
