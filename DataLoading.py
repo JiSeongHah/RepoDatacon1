@@ -9,20 +9,36 @@ from torchvision import transforms
 
 
 class LoadData():
-    def __init__(self,data_dir,TRAIN=True):
+    def __init__(self,data_dir,size4res,TRAIN=True,CROP=True):
         self.data_dir = data_dir
 
         self.TRAIN = TRAIN
 
+        self.CROP = CROP
+
+        self.size4res = size4res
+
         self.transforms = transforms.Compose([
-                                              transforms.Resize(size=(360,360)),
+                                              transforms.Resize(size=(self.size4res[0],
+                                                                      self.size4res[1])),
                                               transforms.RandomHorizontalFlip(p=0.5),
                                               transforms.RandomVerticalFlip(p=0.5),
 
                                               ])
 
+        self.transformsNocrop = transforms.Compose([
+            transforms.Resize(size=(self.size4res[0], self.size4res[1])),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+
+        ])
+
         self.transformsTest = transforms.Compose([
-            transforms.Resize(size=(360, 360)),
+            transforms.Resize(size=(self.size4res[0], self.size4res[1])),
+        ])
+
+        self.transformsTestNocrop = transforms.Compose([
+            transforms.Resize(size=(self.size4res[0], self.size4res[1])),
         ])
 
 
@@ -37,15 +53,26 @@ class LoadData():
         img_arr = np.asarray(Image.open(self.data_dir+'.jpg'))
 
         if self.TRAIN == True:
-            bbox_x,bbox_y,bbox_w,bbox_h = self.bbox['x'],self.bbox['y'],self.bbox['w'],self.bbox['h']
-            croped_img = torch.from_numpy(img_arr[int(bbox_y):int(bbox_y+bbox_h),int(bbox_x):int(bbox_x+bbox_w),:])
-            croped_img = croped_img.permute(2,0,1)
-            croped_img = self.transforms(croped_img).float()
+            if self.CROP == True:
+                bbox_x,bbox_y,bbox_w,bbox_h = self.bbox['x'],self.bbox['y'],self.bbox['w'],self.bbox['h']
+                croped_img = torch.from_numpy(img_arr[int(bbox_y):int(bbox_y+bbox_h),int(bbox_x):int(bbox_x+bbox_w),:])
+                croped_img = croped_img.permute(2,0,1)
+                croped_img = self.transforms(croped_img).float()
+
+            if self.CROP != True:
+                croped_img = croped_img.permute(2, 0, 1)
+                croped_img = self.transformsNocrop(croped_img).float()
 
         else:
-            croped_img = torch.from_numpy(img_arr)
-            croped_img = croped_img.permute(2, 0, 1)
-            croped_img = self.transformsTest(croped_img)
+            if self.CROP == True:
+                croped_img = torch.from_numpy(img_arr)
+                croped_img = croped_img.permute(2, 0, 1)
+                croped_img = self.transformsTest(croped_img)
+            if self.CROP != True:
+                croped_img = torch.from_numpy(img_arr)
+                croped_img = croped_img.permute(2, 0, 1)
+                croped_img = self.transformsTestNocrop(croped_img)
+
 
         return croped_img
 
@@ -101,12 +128,14 @@ class LoadData():
 
 class MyDatacon1Dataset(torch.utils.data.Dataset):
 
-    def __init__(self,data_folder_dir,TRAIN=True):
+    def __init__(self,data_folder_dir,TRAIN=True,CROP=True):
         self.data_folder_dir = data_folder_dir
 
         self.data_folder_lst = os.listdir(data_folder_dir)
 
         self.TRAIN = TRAIN
+
+        self.CROP = CROP
 
         self.label_lst = ['5_b7_1', '1_00_0', '3_00_0', '3_b7_1', '6_a12_2', '4_00_0', '2_00_0', '5_a7_2', '6_00_0',
                           '5_b6_1', '3_b8_1', '2_a5_2', '6_a11_1', '3_b3_1', '3_a9_2', '3_a9_3', '3_a9_1', '5_00_0',
@@ -121,7 +150,7 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
         full_data_dir = self.data_folder_dir+data_folder_name+'/'+data_folder_name
 
         if self.TRAIN == True:
-            input_tensor,label = LoadData(data_dir=full_data_dir,TRAIN=self.TRAIN).get_data_label()
+            input_tensor,label = LoadData(data_dir=full_data_dir,TRAIN=self.TRAIN,CROP=self.CROP).get_data_label()
 
             label = self.label_lst.index(label)
 
