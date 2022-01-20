@@ -5,7 +5,7 @@ from glob import glob
 import json
 from PIL import Image
 from getDataFolders import getDataLst
-
+from torchvision import transforms
 
 
 class LoadData():
@@ -13,6 +13,19 @@ class LoadData():
         self.data_dir = data_dir
 
         self.TRAIN = TRAIN
+
+        self.transforms = transforms.Compose([
+                                              transforms.Resize(size=(360,360)),
+                                              transforms.RandomHorizontalFlip(p=0.5),
+                                              transforms.RandomVerticalFlip(p=0.5),
+
+                                              ])
+
+        self.transformsTest = transforms.Compose([
+            transforms.Resize(size=(360, 360)),
+        ])
+
+
 
         if self.TRAIN == True:
             self.image_name,self.region,self.task,self.disease,\
@@ -26,9 +39,13 @@ class LoadData():
         if self.TRAIN == True:
             bbox_x,bbox_y,bbox_w,bbox_h = self.bbox['x'],self.bbox['y'],self.bbox['w'],self.bbox['h']
             croped_img = torch.from_numpy(img_arr[int(bbox_y):int(bbox_y+bbox_h),int(bbox_x):int(bbox_x+bbox_w),:])
+            croped_img = croped_img.permute(2,0,1)
+            croped_img = self.transforms(croped_img).float()
 
         else:
             croped_img = torch.from_numpy(img_arr)
+            croped_img = croped_img.permute(2, 0, 1)
+            croped_img = self.transformsTest(croped_img)
 
         return croped_img
 
@@ -105,7 +122,7 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
         if self.TRAIN == True:
             input_tensor,label = LoadData(data_dir=full_data_dir,TRAIN=self.TRAIN).get_data_label()
 
-            crop_label = float(label.split('_')[0])
+            crop_label = float(label.split('_')[0]) -1
             dis_risk_label = self.disrisk_label_lst.index(label.split('_')[1] + label.split('_')[2])
 
             return data_folder_name,input_tensor,crop_label,dis_risk_label
@@ -117,7 +134,25 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
 
 
 
-
+# path = '/home/a286winteriscoming/Downloads/Data4dacon1/data/test/'
+#
+# dt= MyDatacon1Dataset(data_folder_dir=path,TRAIN=False)
+#
+# for i in dt:
+#     print(i[1].size())
+#
+# wLst= []
+# hLst = []
+#
+# cnum= 0
+# for i in dt:
+#     wLst.append(i[1].shape[1])
+#     hLst.append(i[1].shape[0])
+#     print(wLst[-1],hLst[-1])
+#     print(f'{cnum} done')
+#     cnum += 1
+#
+# print(f'mean of w is : {np.mean(wLst)} and mean of h is : {np.mean(hLst)} ')
 
 
 #

@@ -81,26 +81,26 @@ def getDataLst(path):
     return os.listdir(path)
 
 
-path = '/home/a286winteriscoming/Downloads/Data4dacon1/data/train/'
-lst = getDataLst(path)
-print(lst)
-
-
-
-
-label_lst = []
-
-for i in lst:
-    _,label = LoadData(path+i+'/'+i).get_data_label()
-
-    #label_kind =label.split('_')[1]+label.split('_')[2]
-
-    label_kind = label.split('_')[0]
-
-    print(label_kind)
-
-    if label_kind not in label_lst:
-        label_lst.append(label_kind)
-
-print(len(label_lst))
-print(sorted(label_lst))
+# path = '/home/a286winteriscoming/Downloads/Data4dacon1/data/train/'
+# lst = getDataLst(path)
+# print(lst)
+#
+#
+#
+#
+# label_lst = []
+#
+# for i in lst:
+#     _,label = LoadData(path+i+'/'+i).get_data_label()
+#
+#     #label_kind =label.split('_')[1]+label.split('_')[2]
+#
+#     label_kind = label.split('_')[0]
+#
+#     print(label_kind)
+#
+#     if label_kind not in label_lst:
+#         label_lst.append(label_kind)
+#
+# print(len(label_lst))
+# print(sorted(label_lst))

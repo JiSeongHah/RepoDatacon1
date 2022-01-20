@@ -178,7 +178,7 @@ class ResNet(nn.Module):
 
 class ResNetBackbone(nn.Module):
     def __init__(self, block, num_blocks,last_out_feature=1000):
-        super(ResNet, self).__init__()
+        super(ResNetBackbone, self).__init__()
         # RGB 3개채널에서 64개의 Kernel 사용 (논문 참고)
         self.in_planes = 64
 
