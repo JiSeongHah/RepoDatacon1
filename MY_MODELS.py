@@ -219,7 +219,7 @@ class ResNetBackbone(nn.Module):
         out = self.layer4(out)
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
-        out = self.linear(out)
+        out = F.relu(self.linear(out))
 
         return out
 
@@ -249,9 +249,9 @@ class Datacon1model(nn.Module):
     def forward(self,x):
 
         out = self.backbone(x)
-        out = self.lin1(out)
-        out = self.lin2(out)
-        out = self.lin3(out)
+        out = F.relu(self.lin1(out))
+        out = F.relu(self.lin2(out))
+        out = F.relu(self.lin3(out))
         out = self.linLast(out)
 
         return out

@@ -223,6 +223,7 @@ class Datacon1classifier(nn.Module):
                 TestBLogit = TestBLogit.cpu()
 
                 arg_TestBLogit = torch.argmax(TestBLogit, dim=1).item()
+                #print(arg_TestBLogit)
                 Total_pred = label_lst[arg_TestBLogit]
 
                 ResultLst.append([str(ImageName[0]),Total_pred])
@@ -292,22 +293,23 @@ class Datacon1classifier(nn.Module):
 if __name__ == '__main__':
 
     modelKind = 'resnet50'
-    backboneOutFeature = 1000
-    LinNum = 100
+    baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
+    backboneOutFeature = 512*4
+    LinNum = 256
     totalCropNum = 25
-    data_folder_dir_trn = '/home/a286winteriscoming/Downloads/Data4dacon1/data/train/'
-    data_folder_dir_val  = '/home/a286winteriscoming/Downloads/Data4dacon1/data/val/'
-    data_folder_dir_test = '/home/a286winteriscoming/Downloads/Data4dacon1/data/test/'
+    data_folder_dir_trn = baseDir + 'data/train/'
+    data_folder_dir_val  = baseDir + 'data/val/'
+    data_folder_dir_test = baseDir + 'data/test/'
     MaxEpoch= 10
     iter_to_accumul = 2
     MaxStep = 20
     MaxStepVal = 10000
     bSizeTrn = 24
     save_range= 10
-    modelLoadNum = 300
+    modelLoadNum = 280
 
     savingDir = mk_name(model=modelKind,BckOutFt=backboneOutFeature,cNum=LinNum,bS=bSizeTrn)
-    modelPlotSaveDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'+savingDir + '/'
+    modelPlotSaveDir = baseDir +savingDir + '/'
     createDirectory(modelPlotSaveDir)
 
 
