@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import csv
+import os
 
 
 class Datacon1classifier(nn.Module):
@@ -288,15 +289,15 @@ class Datacon1classifier(nn.Module):
                 break
 
 
-
+os.environ["CUDA_VISIBLE_DEVICES"]= "2"
 
 if __name__ == '__main__':
 
     modelKind = 'resnet152'
     #baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
     baseDir = '/home/a286/hjs_dir1/Dacon1/'
-    backboneOutFeature = 512*4
-    LinNum = 256
+    backboneOutFeature = 512*2
+    LinNum = 128
     totalCropNum = 25
     data_folder_dir_trn = baseDir + 'data/train/'
     data_folder_dir_val  = baseDir + 'data/val/'

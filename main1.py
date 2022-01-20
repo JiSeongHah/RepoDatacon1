@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import csv
+import os
 
 
 class Datacon1classifier(nn.Module):
@@ -288,7 +289,7 @@ class Datacon1classifier(nn.Module):
                 break
 
 
-
+os.environ["CUDA_VISIBLE_DEVICES"]= "0"
 
 if __name__ == '__main__':
 
