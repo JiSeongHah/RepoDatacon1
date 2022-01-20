@@ -13,8 +13,8 @@ import csv
 
 
 class Datacon1classifier(nn.Module):
-    def __init__(self,modelKind,backboneOutFeature, cropLinNum,disriskLinNum,
-                 totalCropNum,totalDisriskNum,data_folder_dir_trn,
+    def __init__(self,modelKind,backboneOutFeature, LinNum,
+                 totalCropNum,data_folder_dir_trn,
                  data_folder_dir_val,MaxEpoch,data_folder_dir_test,
                  modelPlotSaveDir,iter_to_accumul,MaxStep,MaxStepVal,
                  bSizeTrn= 32,bSizeVal=10,lr=3e-4,eps=1e-9):
@@ -28,10 +28,9 @@ class Datacon1classifier(nn.Module):
 
         self.modelKind = modelKind
         self.backboneOutFeature = backboneOutFeature
-        self.cropLinNum = cropLinNum
-        self.disriskLinNum = disriskLinNum
+        self.LinNum = LinNum
         self.totalCropNum = totalCropNum
-        self.totalDisriskNum = totalDisriskNum
+
 
         self.iter_to_accumul = iter_to_accumul
         self.MaxStep = MaxStep
@@ -50,11 +49,9 @@ class Datacon1classifier(nn.Module):
         self.Datacon1Model = Datacon1model(
             modelKind=self.modelKind,
             backboneOutFeature=backboneOutFeature,
-            cropLinNum=cropLinNum,
-            disriskLinNum=disriskLinNum,
+            LinNum=LinNum,
             totalCropNum=totalCropNum,
-            totalDisriskNum=totalDisriskNum)
-
+            )
 
         USE_CUDA = torch.cuda.is_available()
         print(USE_CUDA)
@@ -66,15 +63,11 @@ class Datacon1classifier(nn.Module):
         self.loss_lst_val = []
         self.loss_lst_val_tmp = []
 
-        self.acc_lst_trn_crop = []
-        self.acc_lst_trn_crop_tmp = []
-        self.acc_lst_trn_disrisk = []
-        self.acc_lst_trn_disrisk_tmp = []
+        self.acc_lst_trn = []
+        self.acc_lst_trn_tmp = []
 
-        self.acc_lst_val_crop = []
-        self.acc_lst_val_crop_tmp = []
-        self.acc_lst_val_disrisk = []
-        self.acc_lst_val_disrisk_tmp = []
+        self.acc_lst_val = []
+        self.acc_lst_val_tmp = []
 
         self.num4epoch = 0
         self.MaxEpoch = MaxEpoch
@@ -96,13 +89,15 @@ class Datacon1classifier(nn.Module):
 
         self.Datacon1Model.to(device=self.device)
 
+
+
     def forward(self,x):
 
-        out1,out2 = self.Datacon1Model(x)
+        out = self.Datacon1Model(x)
 
-        return out1,out2
+        return out
 
-    def calLossCrop(self,logit,label):
+    def calLoss(self,logit,label):
 
         loss = CrossEntropyLoss()
 
@@ -111,16 +106,6 @@ class Datacon1classifier(nn.Module):
 
         acc = torch.mean((pred == label).float())
 
-
-        return loss(logit,label) , acc
-
-    def calLossDisrisk(self,logit,label):
-
-        loss = CrossEntropyLoss()
-
-        pred = torch.argmax(logit, dim=1)
-
-        acc = torch.mean((pred == label).float())
 
         return loss(logit,label) , acc
 
@@ -135,23 +120,20 @@ class Datacon1classifier(nn.Module):
         with torch.set_grad_enabled(True):
             globalTime= time.time()
 
-            for _,bInput, bCropLabel, bDisriskLabel in self.trainDataloader:
+            for _,bInput, bLabel  in self.trainDataloader:
                 localTime= time.time()
 
                 bInput = bInput.to(self.device)
 
-                bLogitCrop,bLogitDisrisk = self.forward(bInput)
-                bLogitCrop = bLogitCrop.cpu()
-                bLogitDisrisk = bLogitDisrisk.cpu()
+                bLogit = self.forward(bInput)
+                bLogit = bLogit.cpu()
 
-                ResultLossCrop,AccCrop = self.calLossCrop(bLogitCrop,bCropLabel.long())
-                ResultLossDisrisk,AccDisrisk = self.calLossDisrisk(bLogitDisrisk, bDisriskLabel.long())
 
-                TotalLoss =  (ResultLossCrop + ResultLossDisrisk)/ self.iter_to_accumul
-                TotalLoss.backward()
-                self.loss_lst_trn_tmp.append(float(TotalLoss.item()))
-                self.acc_lst_trn_crop_tmp.append(AccCrop)
-                self.acc_lst_trn_disrisk_tmp.append(AccDisrisk)
+                ResultLoss,Acc = self.calLoss(bLogit,bLabel.long())
+
+                ResultLoss.backward()
+                self.loss_lst_trn_tmp.append(float(ResultLoss.item()))
+                self.acc_lst_trn_tmp.append(Acc)
 
                 if (countNum + 1) % self.iter_to_accumul == 0:
                     self.optimizer.step()
@@ -160,13 +142,12 @@ class Datacon1classifier(nn.Module):
                 if (countNum + 1 ) % self.bSizeVal == 0:
                     ################# mean of each append to lst for plot###########
                     self.loss_lst_trn.append(np.mean(self.loss_lst_trn_tmp))
-                    self.acc_lst_trn_crop.append(np.mean(self.acc_lst_trn_crop_tmp))
-                    self.acc_lst_trn_disrisk.append(np.mean(self.acc_lst_trn_disrisk_tmp))
+                    self.acc_lst_trn.append(np.mean(self.acc_lst_trn_tmp))
+
                     ################# mean of each append to lst for plot###########
                     ###########flush#############
                     self.loss_lst_trn_tmp = []
-                    self.acc_lst_trn_crop_tmp = []
-                    self.acc_lst_trn_disrisk_tmp = []
+                    self.acc_lst_trn_tmp = []
 
                 if countNum == self.MaxStep:
                     break
@@ -191,23 +172,17 @@ class Datacon1classifier(nn.Module):
         self.optimizer.zero_grad()
 
         with torch.set_grad_enabled(False):
-            for _,valBInput, valBCropLabel, valBDisriskLabel in self.valDataloader:
+            for _,valBInput, valBLabel in self.valDataloader:
 
                 valBInput = valBInput.to(self.device)
 
-                valBLogitCrop,valBLogitDisrisk = self.forward(valBInput)
+                valBLogit = self.forward(valBInput)
+                valBLogit = valBLogit.cpu()
 
-                valBLogitCrop = valBLogitCrop.cpu()
-                valBLogitDisrisk = valBLogitDisrisk.cpu()
+                ResultLoss,Acc = self.calLoss(valBLogit,valBLabel.long())
 
-                ResultLossCrop,AccCrop = self.calLossCrop(valBLogitCrop,valBCropLabel.long())
-                ResultLossDisrisk,AccDisrisk = self.calLossDisrisk(valBLogitDisrisk,valBDisriskLabel.long())
-
-                TotalLoss =  (ResultLossCrop + ResultLossDisrisk)/ self.iter_to_accumul
-
-                self.loss_lst_val_tmp.append(float(TotalLoss.item()))
-                self.acc_lst_val_crop_tmp.append(AccCrop)
-                self.acc_lst_val_disrisk_tmp.append(AccDisrisk)
+                self.loss_lst_val_tmp.append(float(ResultLoss.item()))
+                self.acc_lst_val_tmp.append(Acc)
 
                 if countNum == self.MaxStepVal:
                     break
@@ -215,18 +190,22 @@ class Datacon1classifier(nn.Module):
                     countNum += 1
 
             self.loss_lst_val.append(np.mean(self.loss_lst_val_tmp))
-            self.acc_lst_val_crop.append(np.mean(self.acc_lst_val_crop_tmp))
-            self.acc_lst_val_disrisk.append(np.mean(self.acc_lst_val_disrisk_tmp))
+            self.acc_lst_val.append(np.mean(self.acc_lst_val_tmp))
+
             ################# mean of each append to lst for plot###########
             ###########flush#############
             self.loss_lst_val_tmp = []
-            self.acc_lst_val_crop_tmp = []
-            self.acc_lst_val_disrisk_tmp = []
+            self.acc_lst_val_tmp = []
+
 
         torch.set_grad_enabled(True)
         self.Datacon1Model.train()
 
     def TestStep(self):
+
+        label_lst = ['5_b7_1', '1_00_0', '3_00_0', '3_b7_1', '6_a12_2', '4_00_0', '2_00_0', '5_a7_2', '6_00_0',
+                          '5_b6_1', '3_b8_1', '2_a5_2', '6_a11_1', '3_b3_1', '3_a9_2', '3_a9_3', '3_a9_1', '5_00_0',
+                          '6_b5_1', '5_b8_1', '3_b6_1', '6_b4_1', '6_a12_1', '6_b4_3', '6_a11_2']
 
         self.Datacon1Model.eval()
         countNum = 0
@@ -238,18 +217,16 @@ class Datacon1classifier(nn.Module):
             for ImageName,TestBInput in self.TestDataloader:
 
 
-                TestBInput = TestBInput.to(self.device)
+                TestBInput = (TestBInput.float()).to(self.device)
 
-                TestBLogitCrop,TestBLogitDisrisk = self.forward(TestBInput)
+                TestBLogit = self.forward(TestBInput)
+                TestBLogit = TestBLogit.cpu()
 
-                TestBLogitCrop = str(TestBLogitCrop.cpu())
-                TestBLogitDisrisk = str(TestBLogitDisrisk.cpu())
-                TestBLogitDisrisk = TestBLogitDisrisk[:-1]+'_'+TestBLogitDisrisk[-1]
+                arg_TestBLogit = torch.argmax(TestBLogit, dim=1).item()
+                Total_pred = label_lst[arg_TestBLogit]
 
-                Total_pred = TestBLogitCrop + '_'+TestBLogitDisrisk
-
-                ResultLst.append([str(ImageName),Total_pred])
-                print(f'{countNum} / {len(self.testLen)} Pred done ')
+                ResultLst.append([str(ImageName[0]),Total_pred])
+                print(f'{countNum} / {self.testLen} Pred done  data : {[str(ImageName[0]),Total_pred]}')
                 countNum +=1
 
 
@@ -260,7 +237,7 @@ class Datacon1classifier(nn.Module):
 
 
         header = ['image','label']
-        with open('sample_submission.csv','w') as f:
+        with open(self.modelPlotSaveDir+'sample_submission.csv','w') as f:
             wr = csv.writer(f)
             wr.writerow(header)
             for i in ResultLst:
@@ -285,25 +262,19 @@ class Datacon1classifier(nn.Module):
 
 
             fig = plt.figure()
-            ax1 = fig.add_subplot(1, 6, 1)
+            ax1 = fig.add_subplot(1, 4, 1)
             ax1.plot(range(len(self.loss_lst_trn)), self.loss_lst_trn)
             ax1.set_title('train loss')
-            ax2 = fig.add_subplot(1, 6, 2)
-            ax2.plot(range(len(self.acc_lst_trn_crop)), self.acc_lst_trn_crop)
-            ax2.set_title('train acc crop')
-            ax3 = fig.add_subplot(1, 6, 3)
-            ax3.plot(range(len(self.acc_lst_trn_disrisk)), self.acc_lst_trn_disrisk)
-            ax3.set_title('train acc disrisk')
+            ax2 = fig.add_subplot(1, 4, 2)
+            ax2.plot(range(len(self.acc_lst_trn)), self.acc_lst_trn)
+            ax2.set_title('train acc')
 
-            ax4 = fig.add_subplot(1, 6, 4)
-            ax4.plot(range(len(self.loss_lst_val)), self.loss_lst_val)
-            ax4.set_title('val loss')
-            ax5 = fig.add_subplot(1, 6, 5)
-            ax5.plot(range(len(self.acc_lst_val_crop)), self.acc_lst_val_crop)
-            ax5.set_title('val acc crop')
-            ax6 = fig.add_subplot(1, 6, 6)
-            ax6.plot(range(len(self.acc_lst_val_disrisk)), self.acc_lst_val_disrisk)
-            ax6.set_title('val acc disrisk')
+            ax3 = fig.add_subplot(1, 4, 3)
+            ax3.plot(range(len(self.loss_lst_val)), self.loss_lst_val)
+            ax3.set_title('val loss')
+            ax4 = fig.add_subplot(1, 4, 4)
+            ax4.plot(range(len(self.acc_lst_val)), self.acc_lst_val)
+            ax4.set_title('val acc ')
 
             plt.savefig(self.modelPlotSaveDir +  'Result.png', dpi=300)
             print('saving plot complete!')
@@ -320,12 +291,10 @@ class Datacon1classifier(nn.Module):
 
 if __name__ == '__main__':
 
-    modelKind = 'resnet18'
+    modelKind = 'resnet50'
     backboneOutFeature = 1000
-    cropLinNum = 100
-    disriskLinNum = 100
-    totalCropNum = 6
-    totalDisriskNum = 17
+    LinNum = 100
+    totalCropNum = 25
     data_folder_dir_trn = '/home/a286winteriscoming/Downloads/Data4dacon1/data/train/'
     data_folder_dir_val  = '/home/a286winteriscoming/Downloads/Data4dacon1/data/val/'
     data_folder_dir_test = '/home/a286winteriscoming/Downloads/Data4dacon1/data/test/'
@@ -333,14 +302,13 @@ if __name__ == '__main__':
     iter_to_accumul = 2
     MaxStep = 20
     MaxStepVal = 10000
-    bSizeTrn = 64
+    bSizeTrn = 24
     save_range= 10
-    modelLoadNum = 130
+    modelLoadNum = 300
 
-    savingDir = mk_name(model=modelKind,BckOutFt=backboneOutFeature,cNum=cropLinNum,dNum =disriskLinNum,bS=bSizeTrn)
+    savingDir = mk_name(model=modelKind,BckOutFt=backboneOutFeature,cNum=LinNum,bS=bSizeTrn)
     modelPlotSaveDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'+savingDir + '/'
     createDirectory(modelPlotSaveDir)
-
 
 
     try:
@@ -349,10 +317,8 @@ if __name__ == '__main__':
     except:
         MODEL_START  = Datacon1classifier(modelKind=modelKind,
                                           backboneOutFeature=backboneOutFeature,
-                                          cropLinNum=cropLinNum,
-                                          disriskLinNum=disriskLinNum,
+                                          LinNum=LinNum,
                                           totalCropNum=totalCropNum,
-                                          totalDisriskNum=totalDisriskNum,
                                           data_folder_dir_trn=data_folder_dir_trn,
                                           data_folder_dir_val=data_folder_dir_val,
                                           MaxEpoch=MaxEpoch,
@@ -364,30 +330,30 @@ if __name__ == '__main__':
                                           data_folder_dir_test= data_folder_dir_test,
                                           bSizeVal=10,lr=3e-4,eps=1e-9)
 
-    MODEL_START.TestStep()
+    #MODEL_START.TestStep()
 
-    # for i in range(10000):
-    #     MODEL_START.START_TRN_VAL()
-    #
-    #     if i%save_range ==0:
-    #         if i > 150:
-    #             break
-    #
-    #         try:
-    #             torch.save(MODEL_START, modelPlotSaveDir + str(i) + '.pth')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             print('saving model complete')
-    #             time.sleep(5)
-    #         except:
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             print('saving model failed')
-    #             time.sleep(5)
+    for i in range(10000):
+        MODEL_START.START_TRN_VAL()
+
+        if i%save_range ==0:
+            if i > 15000:
+                break
+
+            try:
+                torch.save(MODEL_START, modelPlotSaveDir + str(i) + '.pth')
+                print('saving model complete')
+                print('saving model complete')
+                print('saving model complete')
+                print('saving model complete')
+                print('saving model complete')
+                time.sleep(5)
+            except:
+                print('saving model failed')
+                print('saving model failed')
+                print('saving model failed')
+                print('saving model failed')
+                print('saving model failed')
+                time.sleep(5)
 
 
 

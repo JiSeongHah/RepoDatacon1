@@ -108,8 +108,9 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
 
         self.TRAIN = TRAIN
 
-        self.disrisk_label_lst = ['000', 'a111', 'a112', 'a121', 'a122', 'a52', 'a72', 'a91', 'a92', 'a93', 'b31', 'b41', 'b43',
-                          'b51', 'b61', 'b71', 'b81']
+        self.label_lst = ['5_b7_1', '1_00_0', '3_00_0', '3_b7_1', '6_a12_2', '4_00_0', '2_00_0', '5_a7_2', '6_00_0',
+                          '5_b6_1', '3_b8_1', '2_a5_2', '6_a11_1', '3_b3_1', '3_a9_2', '3_a9_3', '3_a9_1', '5_00_0',
+                          '6_b5_1', '5_b8_1', '3_b6_1', '6_b4_1', '6_a12_1', '6_b4_3', '6_a11_2']
 
     def __len__(self):
         return len(os.listdir(self.data_folder_dir))
@@ -122,10 +123,9 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
         if self.TRAIN == True:
             input_tensor,label = LoadData(data_dir=full_data_dir,TRAIN=self.TRAIN).get_data_label()
 
-            crop_label = float(label.split('_')[0]) -1
-            dis_risk_label = self.disrisk_label_lst.index(label.split('_')[1] + label.split('_')[2])
+            label = self.label_lst.index(label)
 
-            return data_folder_name,input_tensor,crop_label,dis_risk_label
+            return data_folder_name,input_tensor,label
 
         else:
             input_tensor = LoadData(data_dir=full_data_dir, TRAIN=self.TRAIN).get_data_label()
@@ -134,12 +134,21 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
 
 
 
-# path = '/home/a286winteriscoming/Downloads/Data4dacon1/data/test/'
+# path = '/home/a286winteriscoming/Downloads/Data4dacon1/data/train/'
 #
-# dt= MyDatacon1Dataset(data_folder_dir=path,TRAIN=False)
+# dt= MyDatacon1Dataset(data_folder_dir=path,TRAIN=True)
+# labelLst = []
 #
-# for i in dt:
-#     print(i[1].size())
+#
+# for idx,i in enumerate(dt):
+#     print(f'{idx} th done')
+#     print(i[2])
+#     label = i[2]
+#     if label not in labelLst:
+#         labelLst.append(label)
+#
+# print(labelLst)
+# print(len(labelLst))
 #
 # wLst= []
 # hLst = []

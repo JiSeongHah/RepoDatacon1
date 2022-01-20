@@ -225,7 +225,7 @@ class ResNetBackbone(nn.Module):
 
 
 class Datacon1model(nn.Module):
-    def __init__(self,modelKind,backboneOutFeature, cropLinNum,disriskLinNum,totalCropNum,totalDisriskNum):
+    def __init__(self,modelKind,backboneOutFeature, LinNum,totalCropNum):
         super(Datacon1model,self).__init__()
 
         if modelKind == 'resnet18':
@@ -241,35 +241,20 @@ class Datacon1model(nn.Module):
 
         self.backboneOutFeature = backboneOutFeature
 
-        self.crop_lin1 = nn.Linear(in_features=backboneOutFeature,out_features=4*cropLinNum)
-        self.crop_lin2 = nn.Linear(in_features=4*cropLinNum, out_features=2 * cropLinNum)
-        self.crop_lin3 = nn.Linear(in_features=2 * cropLinNum, out_features= cropLinNum)
-        self.crop_linLast = nn.Linear(in_features= cropLinNum, out_features=totalCropNum)
-
-        self.disrisk_lin1 = nn.Linear(in_features=backboneOutFeature, out_features=4 * disriskLinNum)
-        self.disrisk_lin2 = nn.Linear(in_features=4 * disriskLinNum, out_features=2 * disriskLinNum)
-        self.disrisk_lin3 = nn.Linear(in_features=2 * disriskLinNum, out_features=disriskLinNum)
-        self.disrisk_linLast = nn.Linear(in_features=disriskLinNum, out_features=totalDisriskNum)
-
+        self.lin1 = nn.Linear(in_features=backboneOutFeature,out_features=4*LinNum)
+        self.lin2 = nn.Linear(in_features=4*LinNum, out_features=2 * LinNum)
+        self.lin3 = nn.Linear(in_features=2 * LinNum, out_features= LinNum)
+        self.linLast = nn.Linear(in_features= LinNum, out_features=totalCropNum)
 
     def forward(self,x):
 
         out = self.backbone(x)
+        out = self.lin1(out)
+        out = self.lin2(out)
+        out = self.lin3(out)
+        out = self.linLast(out)
 
-        ##################output1####################
-        out1 = self.crop_lin1(out)
-        out1 = self.crop_lin2(out1)
-        out1 = self.crop_lin3(out1)
-        out1 = self.crop_linLast(out1)
-
-        ##################output1####################
-        out2 = self.disrisk_lin1(out)
-        out2 = self.disrisk_lin2(out2)
-        out2 = self.disrisk_lin3(out2)
-        out2 = self.disrisk_linLast(out2)
-        ##################output1####################
-
-        return out1, out2
+        return out
 
 
 
