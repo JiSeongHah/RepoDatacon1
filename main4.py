@@ -300,9 +300,9 @@ os.environ["CUDA_VISIBLE_DEVICES"]= "3"
 
 if __name__ == '__main__':
 
-    modelKind = 'resnet101'
-    baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
-    #baseDir = '/home/a286/hjs_dir1/Dacon1/'
+    modelKind = 'resnet152'
+    #baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
+    baseDir = '/home/a286/hjs_dir1/Dacon1/'
     backboneOutFeature = 512*4
     LinNum = 256
     totalCropNum = 25
@@ -315,9 +315,9 @@ if __name__ == '__main__':
     MaxStepVal = 10000
     bSizeTrn = 8
     save_range= 10
-    modelLoadNum = 260
+    modelLoadNum = 1200
     CROP = False
-    size4res = [512,512]
+    size4res = [512,400]
 
     savingDir = mk_name(model=modelKind,BckOutFt=backboneOutFeature,cNum=LinNum,bS=bSizeTrn)
     modelPlotSaveDir = baseDir +savingDir + '/'
@@ -345,7 +345,7 @@ if __name__ == '__main__':
                                           data_folder_dir_test= data_folder_dir_test,
                                           bSizeVal=10,lr=3e-4,eps=1e-9)
 
-    #MODEL_START.TestStep()
+    MODEL_START.TestStep()
 
     for i in range(10000):
         MODEL_START.START_TRN_VAL()

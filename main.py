@@ -2,7 +2,7 @@ import os
 import torch
 import torch.nn as nn
 from MY_MODELS import Datacon1model
-from torch.optim import AdamW, Adam
+from torch.optim import AdamW, Adam,SGD
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from DataLoading import MyDatacon1Dataset
@@ -81,6 +81,11 @@ class Datacon1classifier(nn.Module):
         self.optimizer = Adam(self.Datacon1Model.parameters(),
                               lr=self.lr,  # 학습률
                               eps=self.eps  # 0으로 나누는 것을 방지하기 위한 epsilon 값
+                              )
+
+        self.optimizer = SGD(self.Datacon1Model.parameters(),
+                              lr=self.lr  # 학습률
+                                # 0으로 나누는 것을 방지하기 위한 epsilon 값
                               )
 
         MyTrnDataset = MyDatacon1Dataset(data_folder_dir=self.data_folder_dir_trn,TRAIN=True,CROP=self.CROP,size4res=size4res)
@@ -269,7 +274,6 @@ class Datacon1classifier(nn.Module):
             self.valdatingStep(validatingNum=i)
             print('Validation complete!')
 
-
             fig = plt.figure()
             ax1 = fig.add_subplot(1, 4, 1)
             ax1.plot(range(len(self.loss_lst_trn)), self.loss_lst_trn)
@@ -303,21 +307,21 @@ if __name__ == '__main__':
     modelKind = 'resnet101'
     baseDir = '/home/a286winteriscoming/Downloads/Data4dacon1/'
     #baseDir = '/home/a286/hjs_dir1/Dacon1/'
-    backboneOutFeature = 512*4
-    LinNum = 256
+    backboneOutFeature = 512
+    LinNum = 128
     totalCropNum = 25
     data_folder_dir_trn = baseDir + 'data/train/'
     data_folder_dir_val  = baseDir + 'data/val/'
     data_folder_dir_test = baseDir + 'data/test/'
     MaxEpoch= 10
-    iter_to_accumul = 10
+    iter_to_accumul = 20
     MaxStep = 20
     MaxStepVal = 10000
     bSizeTrn = 8
-    save_range= 10
-    modelLoadNum = 260
+    save_range= 100
+    modelLoadNum = 2000
     CROP = False
-    size4res = [512,512]
+    size4res = [512,400]
 
     savingDir = mk_name(model=modelKind,BckOutFt=backboneOutFeature,cNum=LinNum,bS=bSizeTrn)
     modelPlotSaveDir = baseDir +savingDir + '/'

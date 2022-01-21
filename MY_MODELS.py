@@ -241,18 +241,17 @@ class Datacon1model(nn.Module):
 
         self.backboneOutFeature = backboneOutFeature
 
-        self.lin1 = nn.Linear(in_features=backboneOutFeature,out_features=4*LinNum)
-        self.lin2 = nn.Linear(in_features=4*LinNum, out_features=2 * LinNum)
-        self.lin3 = nn.Linear(in_features=2 * LinNum, out_features= LinNum)
-        self.linLast = nn.Linear(in_features= LinNum, out_features=totalCropNum)
+        self.lin1 = nn.Linear(in_features=backboneOutFeature,out_features=2*LinNum)
+        self.lin2 = nn.Linear(in_features=2*LinNum, out_features= LinNum)
+        self.lin3 = nn.Linear(in_features= LinNum, out_features= totalCropNum)
+
 
     def forward(self,x):
 
         out = self.backbone(x)
         out = F.relu(self.lin1(out))
         out = F.relu(self.lin2(out))
-        out = F.relu(self.lin3(out))
-        out = self.linLast(out)
+        out = self.lin3(out)
 
         return out
 

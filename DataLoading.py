@@ -167,17 +167,25 @@ class MyDatacon1Dataset(torch.utils.data.Dataset):
 
 
 # path = '/home/a286winteriscoming/Downloads/Data4dacon1/data/train/'
+# import matplotlib.pyplot as plt
 #
-# dt= MyDatacon1Dataset(data_folder_dir=path,TRAIN=True)
+# dt= MyDatacon1Dataset(data_folder_dir=path,TRAIN=True,size4res=[512,512])
 # labelLst = []
-#
-#
+# hLst = []
+# wLst = []
 # for idx,i in enumerate(dt):
 #     print(f'{idx} th done')
-#     print(i[2])
-#     label = i[2]
-#     if label not in labelLst:
-#         labelLst.append(label)
+#     h = i[3][0]
+#     w = i[3][1]
+#
+#     hLst.append(h)
+#     wLst.append(w)
+#
+# print(np.mean(hLst),np.mean(wLst),min(hLst),min(wLst))
+# plt.hist(wLst)
+# plt.show()
+# plt.hist(hLst)
+# plt.show()
 #
 # print(labelLst)
 # print(len(labelLst))
